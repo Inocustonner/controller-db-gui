@@ -10,6 +10,11 @@
 #include <string_view>
 #include <windows.h>
 
+inline
+bool is_ascii(wchar_t ch)
+{
+	return (int)ch < 128;
+}
 
 // create a window with filling form
 // after accept this form sent to db and if call is succesful update append to table
@@ -19,32 +24,80 @@ void add_instance(const nana::arg_click& ei, nana::listbox &table)
 
 	form dlg(ei.window_handle);
 	dlg.caption("Add instance");
-	
 
 	// create lables and corresponding textboxes
-	std::string_view car_id_str = "car id";
+	// car id - int 8 digits long
+	constexpr unsigned car_id_max_chars = 8; // max number len
+	std::string_view car_id_str = "car id";	 // label
 	label car_id_label(dlg, car_id_str.data());
-	
-	textbox car_id_txtb{ std::move(create_dlg_textbox(dlg, 8, true)) };
-	
+	textbox car_id_txtb{ dlg };
+	car_id_txtb.multi_lines(false); // make inline
+	API::effects_edge_nimbus(car_id_txtb, effects::edge_nimbus::none); // disable glowing on select
+	car_id_txtb.set_accept([txtb = &car_id_txtb, max_chars = car_id_max_chars](wchar_t ch) -> bool
+						   {
+							   if (iswdigit(ch) && std::string_view(txtb->caption()).length() < max_chars
+								   || ch == keyboard::backspace) return true;
+							   else return false;
+						   });
+
+	// gov num line - str 9 chars long
+	constexpr unsigned gov_num_max_chars = 9;
 	std::string_view gov_num_str = "gov num";
 	label gov_num_label(dlg, gov_num_str.data());
+	textbox gov_num_txtb{ dlg };
+	gov_num_txtb.multi_lines(false);
+	API::effects_edge_nimbus(gov_num_txtb, effects::edge_nimbus::none);
+	gov_num_txtb.set_accept([txtb = &gov_num_txtb, max_chars = gov_num_max_chars](wchar_t ch) -> bool
+						   {
+							   if (std::string_view(txtb->caption().c_str()).length() < max_chars
+								   && is_ascii(ch)
+								   || ch == keyboard::backspace) return true;
+							   else return false;
+						   });
 	
-	textbox gov_num_txtb = create_dlg_textbox(dlg, 9, false);
-	
+	// car weight line - int 8 digits long
+	constexpr unsigned car_weight_max_chars = 8;
 	std::string_view car_weight_str = "car weight";
 	label car_weight_label(dlg, car_weight_str.data());
+	textbox car_weight_txtb{ dlg };
+	car_weight_txtb.multi_lines(false);
+	API::effects_edge_nimbus(car_weight_txtb, effects::edge_nimbus::none);
+	car_weight_txtb.set_accept([txtb = &car_weight_txtb, max_chars = car_weight_max_chars](wchar_t ch) -> bool
+						   {
+							   if (iswdigit(ch) && std::string_view(txtb->caption()).length() < max_chars
+								   || ch == keyboard::backspace) return true;
+							   else return false;
+						   });
 	
-	textbox car_weight_txtb = create_dlg_textbox(dlg, 8, true);
-	
+	// correction line - int 6 digits long
+	constexpr unsigned correction_max_chars = 6;	
 	std::string_view correction_str = "correction";
 	label correction_label(dlg, correction_str.data());
+	textbox correction_txtb{ dlg };
+	correction_txtb.multi_lines(false);
+	API::effects_edge_nimbus(correction_txtb, effects::edge_nimbus::none);
+	correction_txtb.set_accept([txtb = &correction_txtb, max_chars = correction_max_chars](wchar_t ch) -> bool
+					   {
+						   if (L'-' == ch || iswdigit(ch) && std::string_view(txtb->caption()).length() < max_chars
+							   || ch == keyboard::backspace) return true;
+						   else return false;
+					   });
 
-	textbox correction_txtb = create_dlg_textbox(dlg, 6, true);
+	// submit form button
+	button submit_button(dlg);
+	submit_button.caption("Submit");
+	submit_button.enable_focus_color(false);
+	submit_button.edge_effects(false);
+
+	submit_button.events().click([&dlg](){ dlg.close();  });
 
 	place plc(dlg);
-	plc.div("<labels grid=[4, 2]>");
-	plc.field("labels") << car_id_label << car_id_txtb << gov_num_label << gov_num_txtb << car_weight_label << car_weight_txtb << correction_label << correction_txtb;
+	plc.div("<vert <car_id> <gov_num> <car_weight> <correction> <submit_button>>");
+	plc.field("car_id") << car_id_label << car_id_txtb;
+	plc.field("gov_num") << gov_num_label << gov_num_txtb;
+	plc.field("car_weight") << car_weight_label << car_weight_txtb;
+	plc.field("correction") << correction_label << correction_txtb;
+	plc.field("submit_button") << submit_button;
 	plc.collocate();
 	API::modal_window(dlg);
 }
@@ -55,7 +108,7 @@ void init_interface(nana::form *fm)
 {
 	using nana::listbox, nana::button;
 	
-	static listbox table(*fm, nana::rectangle(10, 60, 800, 200));
+	static listbox table(*fm, nana::rectangle(10, 60, 850, 200));
 	table.sortable(false);
 	table.append_header("car id", 200);
 	table.append_header("gov num", 200);
@@ -86,7 +139,7 @@ int main()
 	form fm;
 	unsigned int wnd_height = 900, wnd_width = 300;
 	fm.size({ wnd_height, wnd_width });
-
+	fm.caption("db table");
 	// compute font size
 
 	init_interface(&fm);
