@@ -59,7 +59,8 @@ private:
 	SQLSMALLINT cols_cnt = 0;
 	SQLLEN rows_cnt = 0;
 	RETCODE last_retcode;
-	
+	SQLINTEGER sql_status_code;
+
 public:
 	Stmt() = delete;
 	Stmt(HSTMT hStmt);
@@ -73,8 +74,9 @@ public:
 	SQLLEN get_rows_cnt();
 	Data_Matrix_t get_all_rows(); // data put in a line
 	
-	RETCODE get_last_retcode();
-
+	RETCODE get_last_retcode() const noexcept;
+	SQLINTEGER get_status_code() const noexcept;
+	
 private:
 	bool alloc_odbc_data();
 	bool are_bindings_alloc = false;
@@ -92,6 +94,8 @@ public:
 	bool connect();
 	Stmt *exec_query(const char *query);
 	RETCODE get_last_retcode() const noexcept;
+	SQLINTEGER get_status_code() const noexcept;
+
 private:
 	HDBC hDbc = NULL;
 	HSTMT hStmt = NULL;
@@ -100,4 +104,5 @@ private:
 	const char *connection_string = nullptr;
 	bool connected = false;
 	RETCODE last_retcode;
+	SQLINTEGER sql_status_code;
 };
