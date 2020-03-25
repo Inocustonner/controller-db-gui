@@ -1,127 +1,171 @@
+#include <odbc/odbc.hpp>
+
 #include <nana/gui.hpp>
+#include <nana/gui/place.hpp>
+#include <nana/gui/widgets/form.hpp>
 #include <nana/gui/widgets/button.hpp>
+#include <nana/gui/widgets/textbox.hpp>
 #include <nana/gui/widgets/listbox.hpp>
 #include <nana/gui/widgets/label.hpp>
-#include <nana/gui/widgets/textbox.hpp>
-#include <nana/gui/place.hpp>
 
 #include <iostream>
-#include <cwctype>				// iswdigit
-#include <string_view>
-#include <windows.h>
+
+Odbc database;
+size_t page_index;
+size_t page_rows_limit;
 
 inline
-bool is_ascii(wchar_t ch)
+void set_butt_props(nana::button &butt)
 {
-	return (int)ch < 128;
+	butt.enable_focus_color(false);
+	butt.edge_effects(false);
 }
 
-// create a window with filling form
-// after accept this form sent to db and if call is succesful update append to table
-void add_instance(const nana::arg_click& ei, nana::listbox &table)
+auto get_accept(nana::textbox &txtb, size_t max_chars)
+{
+	return [&txtb, max_chars = max_chars](wchar_t ch) -> bool
+		   {
+			   if (iswdigit(ch) && txtb.caption().length() < max_chars
+				   || ch == nana::keyboard::backspace
+				   || ch == nana::keyboard::paste
+				   || ch == nana::keyboard::copy)
+				   return true;
+			   else
+				   return false;
+		   };
+}
+
+
+void set_one_line_num_textbox(nana::textbox &txtb)
 {
 	using namespace nana;
-
-	form dlg(ei.window_handle);
-	dlg.caption("Add instance");
-
-	// create lables and corresponding textboxes
-	// car id - int 8 digits long
-	constexpr unsigned car_id_max_chars = 8; // max number len
-	std::string_view car_id_str = "car id";	 // label
-	label car_id_label(dlg, car_id_str.data());
-	textbox car_id_txtb{ dlg };
-	car_id_txtb.multi_lines(false); // make inline
-	API::effects_edge_nimbus(car_id_txtb, effects::edge_nimbus::none); // disable glowing on select
-	car_id_txtb.set_accept([txtb = &car_id_txtb, max_chars = car_id_max_chars](wchar_t ch) -> bool
-						   {
-							   if (iswdigit(ch) && std::string_view(txtb->caption()).length() < max_chars
-								   || ch == keyboard::backspace) return true;
-							   else return false;
-						   });
-
-	// gov num line - str 9 chars long
-	constexpr unsigned gov_num_max_chars = 9;
-	std::string_view gov_num_str = "gov num";
-	label gov_num_label(dlg, gov_num_str.data());
-	textbox gov_num_txtb{ dlg };
-	gov_num_txtb.multi_lines(false);
-	API::effects_edge_nimbus(gov_num_txtb, effects::edge_nimbus::none);
-	gov_num_txtb.set_accept([txtb = &gov_num_txtb, max_chars = gov_num_max_chars](wchar_t ch) -> bool
-						   {
-							   if (std::string_view(txtb->caption().c_str()).length() < max_chars
-								   && is_ascii(ch)
-								   || ch == keyboard::backspace) return true;
-							   else return false;
-						   });
-	
-	// car weight line - int 8 digits long
-	constexpr unsigned car_weight_max_chars = 8;
-	std::string_view car_weight_str = "car weight";
-	label car_weight_label(dlg, car_weight_str.data());
-	textbox car_weight_txtb{ dlg };
-	car_weight_txtb.multi_lines(false);
-	API::effects_edge_nimbus(car_weight_txtb, effects::edge_nimbus::none);
-	car_weight_txtb.set_accept([txtb = &car_weight_txtb, max_chars = car_weight_max_chars](wchar_t ch) -> bool
-						   {
-							   if (iswdigit(ch) && std::string_view(txtb->caption()).length() < max_chars
-								   || ch == keyboard::backspace) return true;
-							   else return false;
-						   });
-	
-	// correction line - int 6 digits long
-	constexpr unsigned correction_max_chars = 6;	
-	std::string_view correction_str = "correction";
-	label correction_label(dlg, correction_str.data());
-	textbox correction_txtb{ dlg };
-	correction_txtb.multi_lines(false);
-	API::effects_edge_nimbus(correction_txtb, effects::edge_nimbus::none);
-	correction_txtb.set_accept([txtb = &correction_txtb, max_chars = correction_max_chars](wchar_t ch) -> bool
-					   {
-						   if (L'-' == ch || iswdigit(ch) && std::string_view(txtb->caption()).length() < max_chars
-							   || ch == keyboard::backspace) return true;
-						   else return false;
-					   });
-
-	// submit form button
-	button submit_button(dlg);
-	submit_button.caption("Submit");
-	submit_button.enable_focus_color(false);
-	submit_button.edge_effects(false);
-
-	submit_button.events().click([&dlg](){ dlg.close();  });
-
-	place plc(dlg);
-	plc.div("<vert <car_id> <gov_num> <car_weight> <correction> <submit_button>>");
-	plc.field("car_id") << car_id_label << car_id_txtb;
-	plc.field("gov_num") << gov_num_label << gov_num_txtb;
-	plc.field("car_weight") << car_weight_label << car_weight_txtb;
-	plc.field("correction") << correction_label << correction_txtb;
-	plc.field("submit_button") << submit_button;
-	plc.collocate();
-	API::modal_window(dlg);
+	txtb.multi_lines(false);
+	API::effects_edge_nimbus(txtb, effects::edge_nimbus::none);
+	txtb.text_align(align::right);
 }
 
 
-// called only once
-void init_interface(nana::form *fm)
+void table_on_resized(nana::listbox &table, const nana::arg_resized &a_r)
 {
-	using nana::listbox, nana::button;
-	
-	static listbox table(*fm, nana::rectangle(10, 60, 850, 200));
-	table.sortable(false);
-	table.append_header("car id", 200);
-	table.append_header("gov num", 200);
-	table.append_header("car weight", 200);
-	table.append_header("car weight correction", 200);
-	
+	table.auto_draw(false);
+	table.column_at(0).width((a_r.width - 8) / 3);
+	table.column_at(1).width((a_r.width - 8) / 3);
+	table.column_at(2).width((a_r.width - 8) / 3);
+	table.auto_draw(true);
+}
 
-	static button add_button(*fm, nana::rectangle(10, 10, 100, 50));
-	add_button.caption("Add");
-	add_button.enable_focus_color(false);
-	add_button.edge_effects(false);
 
-	add_button.events().click([table = &table](const nana::arg_click& ei){ add_instance(ei, *table); });
+void update_table(nana::listbox &table)
+{
+	char query_buffer[100] = {};
+	snprintf(query_buffer, std::size(query_buffer),
+			 "SELECT * FROM cars_table LIMIT %u OFFSET %u;", page_rows_limit, page_index * page_rows_limit);
+	Stmt *stmt = database.exec_query(reinterpret_cast<const char*>(query_buffer));
+	if (stmt == nullptr)
+	{
+		std::cout << "Failed to update table" << std::endl;
+		return;
+	}
+	
+	int rows_cnt = stmt->get_rows_cnt();
+	int cols_cnt = stmt->get_cols_cnt();
+	Data_Matrix_t rows_v = stmt->get_all_rows();
+	if (std::size(rows_v))
+	{
+		table.clear();			// clear all rows from the table
+		auto cat = table.at(0);
+		table.auto_draw(false);
+		// for (int row_i = 0; row_i < rows_cnt; ++row_i)
+		// {
+		// 	std::vector<Odbc_Data> &row_v = rows[row_i];
+			
+		// }
+		// redraw current page
+		for (auto &row_v : rows_v)
+		{
+			int car_id = *reinterpret_cast<int*>(row_v[0].get_data());
+			int weight = *reinterpret_cast<int*>(row_v[1].get_data());
+			int corr = *reinterpret_cast<const int*>(row_v[2].get_data());
+			cat.append({ std::to_string(car_id),
+						 std::to_string(weight),
+						 std::to_string(corr) });
+
+		}
+		table.auto_draw(true);
+	}
+	else
+	{
+		std::cout << "Failed to update table" << std::endl;
+		return;
+	}
+}
+
+
+bool insert_into_table(const char *car_id, const char *car_weight, const char *corr)
+{
+	char query_buffer[100] = {};
+	snprintf(query_buffer, std::size(query_buffer),
+			 "INSERT INTO cars_table VALUES(%s, %s, %s);", car_id, car_weight, corr);
+	Stmt *stmt = database.exec_query(reinterpret_cast<const char*>(query_buffer));
+	if (stmt == nullptr)
+	{
+		std::cout << "Error occured" << std::endl;
+		return false;
+	}
+	else
+	{
+		return true;
+	}
+}
+
+
+void add_dialog(const nana::arg_click &a_c, nana::listbox &table)
+{
+	using namespace nana;
+	form dialog_form(a_c.window_handle);
+
+	label	car_id_l(dialog_form, "car number"),
+			car_weight_l(dialog_form, "car weight"),
+			corr_l(dialog_form, "correction");
+	
+	textbox car_id_txtb(dialog_form),
+			car_weight_txtb(dialog_form),
+			corr_txtb(dialog_form);
+
+	set_one_line_num_textbox(car_id_txtb);
+	car_id_txtb.set_accept(get_accept(car_id_txtb, 9));
+	
+	set_one_line_num_textbox(car_weight_txtb);
+	car_weight_txtb.set_accept(get_accept(car_weight_txtb, 9));
+	
+	set_one_line_num_textbox(corr_txtb);
+	corr_txtb.set_accept(get_accept(corr_txtb, 9));
+
+	button butt_submit(dialog_form);
+	set_butt_props(butt_submit);
+	butt_submit.caption("Submit");
+	butt_submit.events().click([&]()
+							   {
+								   if (insert_into_table(car_id_txtb.caption().c_str(), car_weight_txtb.caption().c_str(), corr_txtb.caption().c_str()))
+									   update_table(table);
+								   dialog_form.close();
+							   });
+
+	place layout(dialog_form);
+	layout.div("<vert <car_id> <car_weight> <corr> <butt_submit>>");
+	layout.field("car_id") << car_id_l << car_id_txtb;
+	layout.field("car_weight") << car_weight_l << car_weight_txtb;
+	layout.field("corr") << corr_l << corr_txtb;
+	layout.field("butt_submit") << butt_submit;
+	layout.collocate();
+	API::modal_window(dialog_form);
+}
+
+
+bool db_connect()
+{
+	database.set_connection_string("DRIVER={PostgreSQL ANSI}; SERVER=localhost; PORT=5432; DATABASE=cars; UID=postgres; PWD=root;");
+	return database.connect();
 }
 
 
@@ -131,25 +175,92 @@ INT __stdcall WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, char*, int n
 int main()
 #endif
 {
-	using nana::form, nana::listbox;
+	page_index = 0;
+	page_rows_limit = 10;
 
+	using namespace nana;
+	if (!init_env()
+		|| !db_connect())
+	{
+		return -1;
+	}
 
-	auto screen_info = nana::screen();
+	// create form
+	form main_form;
+	constexpr size_t min_width = 600, min_height = 300;
+	main_form.size({ 600, 300 });
+	main_form.caption("db table");
+	API::track_window_size(main_form, { min_width, min_height }, false);
 
-	form fm;
-	unsigned int wnd_height = 900, wnd_width = 300;
-	fm.size({ wnd_height, wnd_width });
-	fm.caption("db table");
-	// compute font size
+	// create table
+	listbox table(main_form);
+	table.sortable(false);
+	table.column_movable(false);
+	table.column_resizable(false);
+	table.is_single_enabled(false);
+	table.append_header("car number");
+	table.append_header("car weight");
+	table.append_header("correction");
+	table.events().resized([&table](const arg_resized &a_r){ table_on_resized(table, a_r); });
+	update_table(table);
 
-	init_interface(&fm);
+	// create page number textbox
+	textbox txtb_page_num(main_form);
+	set_one_line_num_textbox(txtb_page_num);
+	txtb_page_num.set_accept(get_accept(txtb_page_num, 10));
+	txtb_page_num.events().key_press([&table, &txtb_page_num](const arg_keyboard &a_k)
+									 {
+										 // todo : add input check
+										 if (a_k.key == nana::keyboard::enter)
+										 {
+											 page_index = txtb_page_num.to_int() - 1;
+											 update_table(table);
+										 }
+									 });
 	
+	// create buttons
+	button butt_add(main_form), butt_prev(main_form), butt_next(main_form);
+	butt_add.caption("Add");
+	set_butt_props(butt_add);
+	butt_add.events().click([&table](const arg_click &a_c){ add_dialog(a_c, table); });
 
-	// this will attemp to use   
-	// item_proxy cat_proxy::append (T &&t, bool set_value=false) 
-	// to add a value any of char[4]  = "int"
-	// lb.at(0).append({"double"});
-	fm.show();
-	nana::exec();
+	butt_prev.caption("<");
+	set_butt_props(butt_prev);
+	butt_prev.events().click([&table, &txtb_page_num]()
+							 {
+								 if (page_index > 0)
+								 {
+									 page_index--;
+									 txtb_page_num.from((int)(page_index + 1));
+									 update_table(table);
+								 }
+							 });
+	
+	butt_next.caption(">");
+	set_butt_props(butt_next);
+	butt_next.events().click([&table, &txtb_page_num]()
+								 {
+									 if (page_rows_limit == table.size_item(0))
+									 {
+										 page_index++;
+										 txtb_page_num.from((int)(page_index + 1));
+										 update_table(table);
+									 }
+								 });
+   
+
+	// configure layout
+	place layout(main_form);
+	txtb_page_num.from((int)(page_index + 1));
+	layout.div("<vert <table> <weight=10% <butt_add><butt_prev><page_num><butt_next>> >");
+	layout.field("table") << table;
+	layout.field("butt_add") << butt_add;
+	layout.field("butt_prev") << butt_prev;
+	layout.field("page_num") << txtb_page_num;
+	layout.field("butt_next") << butt_next;
+	layout.collocate();
+	
+	main_form.show();
+	exec();
+	free_env();
 }
-

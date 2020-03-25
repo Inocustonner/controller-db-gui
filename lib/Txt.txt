@@ -1,0 +1,8 @@
+in each of the following directories put P7 libs nana libs(compiled with /MD[d]) and obdc-class libs
+#https://github.com/cnjinhao/nana
+#http://baical.net/downloads.html
+#https://github.com/Inocustonner/odbc-interface
+Debug
+MinSizeRel
+Release
+RelWithDebInfo

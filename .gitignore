@@ -1,3 +1,13 @@
+build*
 *.txt
-/obj
-/bin
+
+src/**.txt
+src/**.pdb
+src/main_old.cpp
+
+.vs/
+bin/
+obj/
+
+lib/*
+!lib/Txt.txt
