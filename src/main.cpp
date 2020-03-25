@@ -10,6 +10,8 @@
 
 #include <iostream>
 
+#define DEBUG_TABLE
+
 Odbc database;
 size_t page_index;
 size_t page_rows_limit;
