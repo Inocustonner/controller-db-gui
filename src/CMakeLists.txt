@@ -1,13 +1,16 @@
 cmake_minimum_required(VERSION 3.9)
+
+set(odbc_wrapper_path "D:/Projects/Import/odbc-cpp-wrapper/src")
 include_directories("${CMAKE_SOURCE_DIR}/include")
-link_directories("${CMAKE_SOURCE_DIR}/lib/${CMAKE_BUILD_TYPE}")
+include_directories("${odbc_wrapper_path}")
+link_directories("${CMAKE_SOURCE_DIR}/lib/${CMAKE_CFG_INTDIR}")
 
-
-add_executable(table_gui main.cpp)
 find_package(ODBC)
-target_link_libraries(table_gui PUBLIC nana_v142.lib ODBC::ODBC odbc_lib.lib p7.lib Ws2_32.lib)
+
+add_definitions(/D_SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING /DDEBUG_TABLE /DODBC_STATIC)
+
+add_executable(table_gui main.cpp DbTable.cpp table_corr.cpp table_weight.cpp)
+target_link_libraries(table_gui odbccpp_static.lib P7.lib nana_v142.lib ODBC::ODBC Ws2_32.lib)
+target_compile_features(table_gui PRIVATE cxx_std_17)
 set_property(TARGET table_gui PROPERTY
   MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:Debug>DLL")
-
-#force c++latest on msvc  
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++latest")
