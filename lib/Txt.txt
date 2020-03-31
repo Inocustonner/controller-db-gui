@@ -1,7 +1,6 @@
-in each of the following directories put P7 libs nana libs(compiled with /MD[d]) and obdc-class libs
+in each of the following directories put compiled static libs with c runtime lib MD[d] with the corresponding configuration
 #https://github.com/cnjinhao/nana
-#http://baical.net/downloads.html
-#https://github.com/Inocustonner/odbc-interface
+#https://github.com/SAP/odbc-cpp-wrapper
 Debug
 MinSizeRel
 Release
