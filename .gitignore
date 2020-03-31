@@ -1,7 +1,9 @@
 build*
 *.txt
+!CMakeLists.txt
 
 src/**.txt
+!src/**CMakeLists.txt
 src/**.pdb
 src/main_old.cpp
 
