@@ -30,10 +30,19 @@ public:
 		layout();
 	}
 
-	template<typename ...Args>
-	auto append_header(Args&& ...args)
+	// template<typename ...Args>
+	// auto append_header(Args&& ...args)
+	// {
+	// 	return this->table.append_header(std::forward<Args>(args)...);
+	// } 
+
+	auto append_header(std::string&& header_name, std::string field_name = "")
 	{
-		return this->table.append_header(std::forward<Args>(args)...);
+		if (field_name.empty())
+			field_name = header_name;
+
+		corresp_fields.push_back(field_name);
+		return table.append_header(header_name);
 	}
 
 	bool connect_db(std::string_view conn_str);
@@ -46,12 +55,23 @@ public:
 
 	void set_table_update_function(std::function<upd_func_t> func);
 
+	struct add_arg
+	{
+		MyWidgets::Listbox &table;
+		odbc::ConnectionRef &dbconn;
+		std::vector<std::string> &corresp_fields;
+	};
+
+	using add_func_t = void(add_arg &);
+
+	void set_table_add_function(std::function<add_func_t> func);
+	void set_table_edit_function(std::function<add_func_t> func);
 private:
 
 	friend void on_next_page_click(DbTable &dbtable);
 	friend void on_prev_page_click(DbTable &dbtable);
-	friend void on_add_click();
-	friend void on_edit_click();
+	friend void on_add_click(DbTable &dbtable);
+	friend void on_edit_click(DbTable &dbtable);
 
 	void set_events();
 	void layout();
@@ -69,4 +89,8 @@ private:
 	odbc::ConnectionRef dbconn;
 	
 	std::function<upd_func_t> update_table_func;
+	std::function<add_func_t> add_table_func;
+	std::function<add_func_t> edit_table_func;
+
+	std::vector<std::string> corresp_fields; // corresponding db field names to headers
 };

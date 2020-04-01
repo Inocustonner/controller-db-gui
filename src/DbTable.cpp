@@ -15,6 +15,7 @@ bool DbTable::connect_db(std::string_view conn_str)
 	return dbconn->connected() && dbconn->isValid();
 }
 
+
 void on_resized(MyWidgets::Listbox &table, const nana::arg_resized &arg)
 {
 	int cols = table.column_size();
@@ -44,6 +45,18 @@ void DbTable::set_table_update_function(std::function<upd_func_t> func)
 }
 
 
+void DbTable::set_table_add_function(std::function<add_func_t> func)
+{
+	add_table_func = func;
+}
+
+
+void DbTable::set_table_edit_function(std::function<add_func_t> func)
+{
+	edit_table_func = func;
+}
+
+
 void on_next_page_click(DbTable &dbtable)
 {
 	if (dbtable.table.size_item(0) == dbtable.page_elems_limit)
@@ -64,6 +77,26 @@ void on_prev_page_click(DbTable &dbtable)
 }
 
 
+void on_add_click(DbTable &dbtable)
+{
+	if (dbtable.add_table_func)
+	{
+		dbtable.add_table_func(dbtable.table, dbtable.dbconn);
+		dbtable.update_table();
+	}
+}
+
+
+void on_edit_click(DbTable &dbtable)
+{
+	if (dbtable.edit_table_func)
+	{
+		dbtable.edit_table_func(dbtable.table, dbtable.dbconn);
+		dbtable.update_table();
+	}
+}
+
+
 void DbTable::set_events()
 {
 	this->next_butt.events().click(
@@ -76,6 +109,18 @@ void DbTable::set_events()
 								   [&]()
 								   {
 									   on_prev_page_click(*this);
+								   });
+
+	this->add_butt.events().click(
+								  [&]()
+								  {
+									  on_add_click(*this); 
+								  });
+
+	this->edit_butt.events().click(
+								   [&]()
+								   {
+									   on_edit_click(*this); 
 								   });
 
 	this->table.events().resized(

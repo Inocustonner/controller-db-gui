@@ -42,10 +42,15 @@ namespace MyWidgets
 		template<typename ...Args>
 		NumTextbox(Args&& ...args) : nana::textbox{ std::forward<Args>(args)... }
 		{
+			configure();
+		}
+
+		void configure()
+		{
 			this->text_align(nana::align::right);
 			this->multi_lines(false);
 			nana::API::effects_edge_nimbus(*this, nana::effects::edge_nimbus::none);
-			this->set_accept([&](wchar_t ch)->bool { return num_filter(ch); });
+			this->set_accept([&](wchar_t ch)->bool { return num_filter(ch); });			
 		}
 	};
 

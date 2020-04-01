@@ -5,7 +5,7 @@
 #include <string>
 #include <iostream>
 
-void on_upd(MyWidgets::Listbox &table, odbc::ConnectionRef &dbconn, size_t current_page, size_t page_elems_limit)
+static void on_upd(MyWidgets::Listbox &table, odbc::ConnectionRef &dbconn, size_t current_page, size_t page_elems_limit)
 {
 	try
 	{
