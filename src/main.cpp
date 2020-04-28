@@ -30,7 +30,7 @@ int main()
 	// layout.field("buttons") << butt_user << butt_admin;
 	// layout.collocate();
 
-	// user_table();
+	user_table();
 	admin_table();
 	// API::modal_window(ask_form);
 	

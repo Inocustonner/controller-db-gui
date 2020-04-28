@@ -1,5 +1,3 @@
 #pragma once
-#include "MyWidgets.hpp"
-#include "db.hpp"
-
-void on_add(MyWidgets::Listbox &table, odbc::ConnectionRef &dbconn);
+#include "DbTable.hpp"
+void add_dlg(DbTable& dbtable);

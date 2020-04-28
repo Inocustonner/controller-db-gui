@@ -26,32 +26,20 @@ void on_resized(MyWidgets::Listbox &table, const nana::arg_resized &arg)
 }
 
 
-auto &DbTable::get_table() noexcept
-{
-	return table;
-}
-
-
-const size_t DbTable::get_current_page() const noexcept
-{
-	return current_page;
-}
-
-
-void DbTable::set_table_update_function(std::function<upd_func_t> func)
+void DbTable::set_table_update_function(std::function<func_t> func)
 {
 	update_table_func = func;
 	update_table();
 }
 
 
-void DbTable::set_table_add_function(std::function<add_func_t> func)
+void DbTable::set_table_add_function(std::function<func_t> func)
 {
 	add_table_func = func;
 }
 
 
-void DbTable::set_table_edit_function(std::function<add_func_t> func)
+void DbTable::set_table_edit_function(std::function<func_t> func)
 {
 	edit_table_func = func;
 }
@@ -81,7 +69,7 @@ void on_add_click(DbTable &dbtable)
 {
 	if (dbtable.add_table_func)
 	{
-		dbtable.add_table_func(dbtable.table, dbtable.dbconn);
+		dbtable.add_table_func(dbtable);
 		dbtable.update_table();
 	}
 }
@@ -91,7 +79,7 @@ void on_edit_click(DbTable &dbtable)
 {
 	if (dbtable.edit_table_func)
 	{
-		dbtable.edit_table_func(dbtable.table, dbtable.dbconn);
+		dbtable.edit_table_func(dbtable);
 		dbtable.update_table();
 	}
 }
@@ -100,64 +88,65 @@ void on_edit_click(DbTable &dbtable)
 void DbTable::set_events()
 {
 	this->next_butt.events().click(
-								   [&]()
-								   {
-									   on_next_page_click(*this);
-								   });
+		[&]()
+		{
+			on_next_page_click(*this);
+		});
 
 	this->prev_butt.events().click(
-								   [&]()
-								   {
-									   on_prev_page_click(*this);
-								   });
+		[&]()
+		{
+			on_prev_page_click(*this);
+		});
 
-	this->add_butt.events().click(
-								  [&]()
-								  {
-									  on_add_click(*this); 
-								  });
+	this->upd_butt.events().click(
+		[&]()
+		{
+			on_add_click(*this); 
+		});
 
-	this->edit_butt.events().click(
-								   [&]()
-								   {
-									   on_edit_click(*this); 
-								   });
+	// this->edit_butt.events().click(
+	// 	[&]()
+	// 	{
+	// 		on_edit_click(*this); 
+	// 	});
 
 	this->table.events().resized(
-								 [&](const nana::arg_resized &arg)
-								 {
-									 on_resized(this->table, arg);
-								 });
+		[&](const nana::arg_resized &arg)
+		{
+			on_resized(this->table, arg);
+		});
 
 	this->page_counter.events().key_char(
-										[&](const nana::arg_keyboard &arg)
-										{
-											if (arg.key == nana::keyboard::enter)
-											{
-												current_page = page_counter.to_int();
-												update_table();
-											}
-										});
+		[&](const nana::arg_keyboard &arg)
+		{
+			if (arg.key == nana::keyboard::enter)
+			{
+				current_page = page_counter.to_int();
+				update_table();
+			}
+		});
 }
 
 
 void DbTable::layout()
 {
-	this->div("vert <weight=90% table> < <add_butt> <edit_butt> <page_num> <prev_butt> <next_butt> >");
+	this->div("vert <weight=90% table> < <upd_butt>" // "<edit_butt>"
+			  "<page_num> <prev_butt> <next_butt> >");
 	(*this)["table"] << table;
-	(*this)["add_butt"] << add_butt;
-	(*this)["edit_butt"] << edit_butt;
+	(*this)["upd_butt"] << upd_butt;
+	// (*this)["edit_butt"] << edit_butt;
 	(*this)["page_num"] << page_counter;
 	(*this)["prev_butt"] << prev_butt;
 	(*this)["next_butt"]<< next_butt;
 	this->collocate();
 }
 
-
+inline
 void DbTable::update_table()
 {
 	if (update_table_func)
 	{
-		update_table_func(table, dbconn, current_page, page_elems_limit);
+		update_table_func(*this);
 	}
 }
