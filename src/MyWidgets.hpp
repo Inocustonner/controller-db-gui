@@ -29,13 +29,14 @@ namespace MyWidgets
 
 		bool num_filter(wchar_t ch)
 		{
-		   if (iswdigit(ch) && this->caption().length() < max_chars
-			   || ch == nana::keyboard::backspace || ch == nana::keyboard::del
-			   || ch == nana::keyboard::paste
-			   || ch == nana::keyboard::copy)
-			   return true;
-		   else
-			   return false;
+			if (iswdigit(ch) && this->caption().length() < max_chars
+				||L'-' == ch
+				|| ch == nana::keyboard::backspace || ch == nana::keyboard::del
+				|| ch == nana::keyboard::paste
+				|| ch == nana::keyboard::copy)
+				return true;
+			else
+				return false;
 		}
 
 	public:
