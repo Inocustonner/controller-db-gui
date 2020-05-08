@@ -1,6 +1,7 @@
 #include "AddForm.hpp"
 #include <nana/gui/place.hpp>
 #include <nana/gui/widgets/label.hpp>
+// #include <nana/gui.hpp>
 
 #include <iostream>
 
@@ -8,11 +9,11 @@ static void update_db(DbTable& dbtable,
 					  std::vector<MyWidgets::NumTextbox>& inputs)
 {
 	// form a query string
-	std::string query_str = "INSERT INTO " TABLE_NAME "(";
+	std::string query_str = "INSERT INTO "+ global_table_name +"(";
 	for (auto it = std::cbegin(dbtable.corresp_fields);
 		 it != std::cend(dbtable.corresp_fields); ++it)
 	{
-		query_str += *it + ",";
+		query_str += std::get<0>(*it) + ",";
 	}
 	query_str.pop_back();		// remove redoudant comma
 	query_str = query_str + ")" + " VALUES(";
@@ -20,14 +21,25 @@ static void update_db(DbTable& dbtable,
 	for (auto it = std::cbegin(inputs);
 		 it != std::cend(inputs) - 1; ++it)
 	{
-		query_str += it->caption() + ",";
+		Header_Type type = std::get<1>(dbtable.corresp_fields[std::distance(std::cbegin(inputs), it)]);
+		if (type == Header_Type::Numeric)
+			query_str += it->caption() + ",";
+		else if (type == Header_Type::Text)
+			query_str += '\'' + it->caption() + '\'' + ",";
 	}
-	query_str += (std::crbegin(inputs))->caption() + ") " ON_EXCEPTION(id);
+
+	Header_Type type = std::get<1>(*dbtable.corresp_fields.crbegin());
+	if (type == Header_Type::Numeric)
+		query_str += std::crbegin(inputs)->caption() + ") " ON_EXCEPTION(id);
+	else if (type == Header_Type::Text)
+		query_str += '\'' + std::crbegin(inputs)->caption() + '\'' + ") " ON_EXCEPTION(id);
+
+	//query_str += (std::crbegin(inputs))->caption() + ") " ON_EXCEPTION(id);
 
 	for (auto it = std::cbegin(dbtable.corresp_fields);
 		 it != std::cend(dbtable.corresp_fields); ++it)
 	{
-		query_str += *it + "=EXCLUDED." + *it + ",";
+		query_str += std::get<0>(*it) + "=EXCLUDED." + std::get<0>(*it) + ",";
 	}
 	query_str.pop_back();
 	try
@@ -48,11 +60,11 @@ void add_dlg(DbTable& dbtable)
 	using namespace nana;
 	// dialog form that ask for user input
 	form ask_form;
-	constexpr size_t width = 200, height = 250;
+	constexpr size_t width = 200, height = 300;
 	API::track_window_size(ask_form, { width, height }, false);
 
 	place layout(ask_form);
-	layout.div("<><vert weight=90% <vert weight=120 fields> <weight=50> <> <weight=50 submit_butt>><>");
+	layout.div("<><vert weight=90% <vert weight=200 fields> <weight=10> <> <weight=50 submit_butt>><>");
 
 	const size_t cols = dbtable.table.column_size();
 
@@ -73,6 +85,8 @@ void add_dlg(DbTable& dbtable)
 
 		inputs[i].create(groups[i]);
 		inputs[i].configure();
+		if (std::get<1>(dbtable.corresp_fields[i]) == Header_Type::Text)
+			inputs[i].text_mode();
 
 		groups[i].div("vert <horisontal <label><vert <input>>>");
 		groups[i]["label"] << labels[i];

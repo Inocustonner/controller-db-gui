@@ -1,10 +1,12 @@
 #include "AddForm.hpp"
 #include "tables.hpp"
 #include "DbTable.hpp"
+#include "prompt_db.hpp"
 
 #include <nana/gui/place.hpp>
 #include <string>
 #include <iostream>
+
 
 static void on_upd(DbTable& dbtable)
 {
@@ -34,21 +36,24 @@ static void on_upd(DbTable& dbtable)
 }
 
 
-
-
-
 void user_table()
 {
 	using namespace nana;
+
+	constexpr char* table_name = "cars_table";
+
+	global_table_name = table_name;
+
 	constexpr size_t width = 600, height = 300;
 	form main_form;
 	API::track_window_size(main_form, { width, height }, false);
 	
 	DbTable table(main_form);
 	table.append_header("id");
-	table.append_header("min weight", "weight");
-
-	if (!table.connect_db("DRIVER={PostgreSQL ANSI}; SERVER=localhost; PORT=5432; DATABASE=cars; UID=postgres; PWD=root;"))
+	table.append_header("min weight", "weight", Header_Type::Numeric);
+	table.append_header("gov number", "gn");
+	std::string conn_str = prompt_conn_str();
+	if (!table.connect_db(conn_str.c_str()))
 	{
 		// message box everything is fd up
 		return;

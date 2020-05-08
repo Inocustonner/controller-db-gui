@@ -5,8 +5,15 @@
 #include <type_traits>
 #include <functional>
 #include <string_view>
+#include <tuple>
 // #include <nana/gui/widgets/form.hpp> // in MyButt.hpp
 // #include <nana/gui/widgets/button.hpp> // in MyButt.hpp
+
+enum class Header_Type
+{
+	Numeric,
+	Text
+};
 
 struct DbTable : public nana::group
 {
@@ -37,12 +44,12 @@ public:
 	// 	return this->table.append_header(std::forward<Args>(args)...);
 	// } 
 
-	auto append_header(std::string&& header_name, std::string field_name = "")
+	auto append_header(std::string&& header_name, std::string field_name = "", Header_Type ht = Header_Type::Text)
 	{
 		if (field_name.empty())
 			field_name = header_name;
 
-		corresp_fields.push_back(field_name);
+		corresp_fields.push_back( {field_name, ht} );
 		return table.append_header(header_name);
 	}
 
@@ -75,5 +82,5 @@ public:
 	std::function<func_t> add_table_func;
 	std::function<func_t> edit_table_func;
 
-	std::vector<std::string> corresp_fields; // corresponding db field names to headers
+	std::vector<std::tuple<std::string, Header_Type>> corresp_fields; // corresponding db field names to headers
 };

@@ -25,7 +25,7 @@ namespace MyWidgets
 	struct NumTextbox : public nana::textbox
 	{
 	private:
-		size_t max_chars = 10;
+		const size_t max_chars = 30;
 
 		bool num_filter(wchar_t ch)
 		{
@@ -37,6 +37,11 @@ namespace MyWidgets
 				return true;
 			else
 				return false;
+		}
+
+		bool text_filter()
+		{
+			return this->caption().length() < max_chars;
 		}
 
 	public:
@@ -52,6 +57,11 @@ namespace MyWidgets
 			this->multi_lines(false);
 			nana::API::effects_edge_nimbus(*this, nana::effects::edge_nimbus::none);
 			this->set_accept([&](wchar_t ch)->bool { return num_filter(ch); });			
+		}
+
+		void text_mode()
+		{
+			this->set_accept([&](wchar_t ch)->bool { return text_filter(); });
 		}
 	};
 

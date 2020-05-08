@@ -142,7 +142,7 @@ void DbTable::layout()
 	this->collocate();
 }
 
-inline
+
 void DbTable::update_table()
 {
 	if (update_table_func)
