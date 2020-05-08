@@ -22,17 +22,25 @@ static void on_upd(DbTable& dbtable) noexcept
 		dbtable.table.clear();
 		auto cat = dbtable.table.at(0);
 		dbtable.table.auto_draw(false);
-		while (rs->next())
+
+		for (int i = 0; rs->next(); ++i)
 		{
-			constexpr auto max_fio_len = 60;
-			wchar_t A = L'À', a = L'à', IA = L'ß', ia = L'ÿ';
-			std::array<char, max_fio_len + 1> fio_row = {};
-			std::array<wchar_t, 1024> fio_char = {};
-			rs->getStringData(2, fio_row.data(), std::size(fio_row));
-			//std::for_each(std::begin(fio_row), std::end(fio_row), [](char& c) { if (c != '\0') c += 16; });
-			MultiByteToWideChar(CP_OEMCP, 0, fio_row.data(), -1, fio_char.data(), 1024);
-			//nana::to_wstring(fio_row.data())
-			cat.append({ std::to_wstring(*rs->getInt(1)), std::wstring(fio_char.data()) });
+			if (dbtable.corresp_fields[i].locale == DbTable::Header_Propts::Locale::Rus)
+			{
+				constexpr auto max_fio_len = 30;
+
+				std::array<char, max_fio_len + 1> fio_row = {};
+				std::array<wchar_t, max_fio_len * 2 + 1> fio_char = {};
+
+				rs->getStringData(2, fio_row.data(), std::size(fio_row));
+
+				MultiByteToWideChar(CP_OEMCP, 0, fio_row.data(), -1, fio_char.data(), 1024);
+				cat.append({ std::to_wstring(*rs->getInt(1)), std::wstring(fio_char.data()) });
+			}
+			else
+			{
+				cat.append({ *rs->getString(1), *rs->getString(2) });
+			}
 		}
 
 		dbtable.table.auto_draw(true);
@@ -58,7 +66,7 @@ void drivers_table()
 
 	DbTable table(main_form);
 	table.append_header("id");
-	table.append_header("fio");
+	table.append_header("fio", DbTable::Header_Propts::Locale::Rus);
 
 	if (!table.connect_db(prompt_conn_str("drivers").c_str()))
 	{

@@ -50,7 +50,7 @@ void user_table()
 	
 	DbTable table(main_form);
 	table.append_header("id");
-	table.append_header("min weight", "weight", Header_Type::Numeric);
+	table.append_header("min weight", "weight", DbTable::Header_Propts::Type::Numeric);
 	table.append_header("gov number", "gn");
 	std::string conn_str = prompt_conn_str();
 	if (!table.connect_db(conn_str.c_str()))

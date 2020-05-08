@@ -50,8 +50,8 @@ void admin_table()
 	
 	DbTable table(main_form);
 	table.append_header("id");
-	table.append_header("weight", "weight", Header_Type::Numeric);
-	table.append_header("correction", "corr", Header_Type::Numeric);
+	table.append_header("weight", DbTable::Header_Propts::Type::Numeric);
+	table.append_header("correction", "corr", DbTable::Header_Propts::Type::Numeric);
 	table.append_header("gov number", "gn");
 
 	//"DRIVER={PostgreSQL ANSI}; SERVER=localhost; PORT=5432; DATABASE=cars; UID=postgres; PWD=root;"

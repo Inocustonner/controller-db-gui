@@ -31,7 +31,7 @@ std::string prompt_conn_str(std::string dbname_str)
 	// verify
 	if (inbox.show_modal(server, port, dbname, uid,pwd))
 	{
-		constexpr char driver_str[] = "DRIVER={PostgreSQL ODBC Driver(UNICODE)}";
+		constexpr char driver_str[] = "DRIVER={PostgreSQL ANSI}";
 		constexpr char server_str[] = ";SERVER=";
 		constexpr char port_str[] = ";PORT=";
 		constexpr char db_str[] = ";DATABASE=";

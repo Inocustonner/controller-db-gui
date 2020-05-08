@@ -5,18 +5,30 @@
 #include <type_traits>
 #include <functional>
 #include <string_view>
-#include <tuple>
 // #include <nana/gui/widgets/form.hpp> // in MyButt.hpp
 // #include <nana/gui/widgets/button.hpp> // in MyButt.hpp
 
-enum class Header_Type
-{
-	Numeric,
-	Text
-};
-
 struct DbTable : public nana::group
 {
+public:
+	struct Header_Propts
+	{
+		enum class Type
+		{
+			Numeric,
+			Text
+		};
+		enum class Locale
+		{
+			Eng,
+			Rus
+		};
+
+		std::string dbheader;
+		Type type;
+		Locale locale;
+	};
+
 public:
 	DbTable() = delete;
 
@@ -38,20 +50,30 @@ public:
 		layout();
 	}
 
-	// template<typename ...Args>
-	// auto append_header(Args&& ...args)
-	// {
-	// 	return this->table.append_header(std::forward<Args>(args)...);
-	// } 
 
-	auto append_header(std::string&& header_name, std::string field_name = "", Header_Type ht = Header_Type::Text)
+	auto append_header(std::string&& header_name, std::string&& field_name = "",
+		Header_Propts::Type ht = Header_Propts::Type::Text,
+		Header_Propts::Locale locl = Header_Propts::Locale::Eng)
 	{
 		if (field_name.empty())
 			field_name = header_name;
 
-		corresp_fields.push_back( {field_name, ht} );
+		corresp_fields.push_back( { field_name, ht, locl } );
 		return table.append_header(header_name);
 	}
+
+	auto append_header(std::string&& header_name, Header_Propts::Locale locale)
+	{
+		corresp_fields.push_back({ header_name, Header_Propts::Type::Text, locale });
+		return table.append_header(header_name);
+	}
+
+	auto append_header(std::string&& header_name, Header_Propts::Type type)
+	{
+		corresp_fields.push_back({ header_name, type, Header_Propts::Locale::Eng });
+		return table.append_header(header_name);
+	}
+
 
 	bool connect_db(std::string_view conn_str);
 
@@ -82,5 +104,5 @@ public:
 	std::function<func_t> add_table_func;
 	std::function<func_t> edit_table_func;
 
-	std::vector<std::tuple<std::string, Header_Type>> corresp_fields; // corresponding db field names to headers
+	std::vector<Header_Propts> corresp_fields; // corresponding db field names to headers
 };

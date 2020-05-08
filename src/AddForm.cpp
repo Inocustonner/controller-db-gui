@@ -13,7 +13,7 @@ static void update_db(DbTable& dbtable,
 	for (auto it = std::cbegin(dbtable.corresp_fields);
 		 it != std::cend(dbtable.corresp_fields); ++it)
 	{
-		query_str += std::get<0>(*it) + ",";
+		query_str += it->dbheader + ",";
 	}
 	query_str.pop_back();		// remove redoudant comma
 	query_str = query_str + ")" + " VALUES(";
@@ -21,17 +21,17 @@ static void update_db(DbTable& dbtable,
 	for (auto it = std::cbegin(inputs);
 		 it != std::cend(inputs) - 1; ++it)
 	{
-		Header_Type type = std::get<1>(dbtable.corresp_fields[std::distance(std::cbegin(inputs), it)]);
-		if (type == Header_Type::Numeric)
+		DbTable::Header_Propts::Type type = dbtable.corresp_fields[std::distance(std::cbegin(inputs), it)].type;
+		if (type == DbTable::Header_Propts::Type::Numeric)
 			query_str += it->caption() + ",";
-		else if (type == Header_Type::Text)
+		else if (type == DbTable::Header_Propts::Type::Text)
 			query_str += '\'' + it->caption() + '\'' + ",";
 	}
 
-	Header_Type type = std::get<1>(*dbtable.corresp_fields.crbegin());
-	if (type == Header_Type::Numeric)
+	DbTable::Header_Propts::Type type = dbtable.corresp_fields.crbegin()->type;
+	if (type == DbTable::Header_Propts::Type::Numeric)
 		query_str += std::crbegin(inputs)->caption() + ") " ON_EXCEPTION(id);
-	else if (type == Header_Type::Text)
+	else if (type == DbTable::Header_Propts::Type::Text)
 		query_str += '\'' + std::crbegin(inputs)->caption() + '\'' + ") " ON_EXCEPTION(id);
 
 	//query_str += (std::crbegin(inputs))->caption() + ") " ON_EXCEPTION(id);
@@ -39,7 +39,7 @@ static void update_db(DbTable& dbtable,
 	for (auto it = std::cbegin(dbtable.corresp_fields);
 		 it != std::cend(dbtable.corresp_fields); ++it)
 	{
-		query_str += std::get<0>(*it) + "=EXCLUDED." + std::get<0>(*it) + ",";
+		query_str += it->dbheader + "=EXCLUDED." + it->dbheader + ",";
 	}
 	query_str.pop_back();
 	try
@@ -85,7 +85,7 @@ void add_dlg(DbTable& dbtable)
 
 		inputs[i].create(groups[i]);
 		inputs[i].configure();
-		if (std::get<1>(dbtable.corresp_fields[i]) == Header_Type::Text)
+		if (dbtable.corresp_fields[i].type == DbTable::Header_Propts::Type::Text)
 			inputs[i].text_mode();
 
 		groups[i].div("vert <horisontal <label><vert <input>>>");
