@@ -25,7 +25,7 @@ static void on_upd(DbTable& dbtable)
 			cat.append({ std::to_string(*rs->getInt(1)), 
 				std::to_string(*rs->getInt(2)), 
 				std::to_string(*rs->getInt(3)), 
-				std::to_string(*rs->getInt(4))});
+				*rs->getString(4)});
 		}
 
 		dbtable.table.auto_draw(true);
@@ -52,10 +52,10 @@ void admin_table()
 	table.append_header("id");
 	table.append_header("weight", DbTable::Header_Propts::Type::Numeric);
 	table.append_header("correction", "corr", DbTable::Header_Propts::Type::Numeric);
-	table.append_header("gov number", "gn");
+	table.append_header("gov number", "gn", DbTable::Header_Propts::Type::Text);
 
 	//"DRIVER={PostgreSQL ANSI}; SERVER=localhost; PORT=5432; DATABASE=cars; UID=postgres; PWD=root;"
-	if (!table.connect_db(prompt_conn_str().c_str()))
+	if (!table.connect_db(prompt_conn_str("cars").c_str()))
 	{
 		// message box everything is fd up
 		return;

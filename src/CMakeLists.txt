@@ -7,9 +7,9 @@ link_directories("${CMAKE_SOURCE_DIR}/lib/${CMAKE_CFG_INTDIR}")
 
 find_package(ODBC)
 
-add_definitions(/D_SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING  /DODBC_STATIC /DDEBUG_TABLE)#/DDEBUG_TABLE
+add_definitions(/D_SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING  /DODBC_STATIC)#/DDEBUG_TABLE
 
-add_executable(table_gui main.cpp 
+add_executable(table_gui WIN32 main.cpp 
 							   DbTable.cpp 
 							   table_corr.cpp 
 							   table_weight.cpp 

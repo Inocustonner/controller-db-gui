@@ -25,22 +25,14 @@ static void on_upd(DbTable& dbtable) noexcept
 
 		for (int i = 0; rs->next(); ++i)
 		{
-			if (dbtable.corresp_fields[i].locale == DbTable::Header_Propts::Locale::Rus)
-			{
-				constexpr auto max_fio_len = 30;
+			constexpr auto max_fio_len = 30;
 
-				std::array<char, max_fio_len + 1> fio_row = {};
-				std::array<wchar_t, max_fio_len * 2 + 1> fio_char = {};
+			std::array<char, max_fio_len + 1> fio_row = {};
+			std::array<wchar_t, max_fio_len * 2 + 1> fio_char = {};
 
-				rs->getStringData(2, fio_row.data(), std::size(fio_row));
-
-				MultiByteToWideChar(CP_OEMCP, 0, fio_row.data(), -1, fio_char.data(), 1024);
-				cat.append({ std::to_wstring(*rs->getInt(1)), std::wstring(fio_char.data()) });
-			}
-			else
-			{
-				cat.append({ *rs->getString(1), *rs->getString(2) });
-			}
+			rs->getStringData(2, fio_row.data(), std::size(fio_row));
+			MultiByteToWideChar(CP_UTF8, 0, fio_row.data(), -1, fio_char.data(), 1024);
+			cat.append({ std::to_wstring(*rs->getInt(1)), std::wstring(fio_char.data()) });
 		}
 
 		dbtable.table.auto_draw(true);

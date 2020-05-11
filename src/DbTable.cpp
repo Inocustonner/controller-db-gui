@@ -1,5 +1,6 @@
 #include "DbTable.hpp"
 #include <iostream>
+#include <nana/gui/widgets/menu.hpp>
 
 bool DbTable::connect_db(std::string_view conn_str)
 {
@@ -148,5 +149,34 @@ void DbTable::update_table()
 	if (update_table_func)
 	{
 		update_table_func(*this);
+	}
+}
+
+
+static void delete_by_id(odbc::ConnectionRef& conn, const std::string& id) noexcept
+{
+	try
+	{
+		auto ps = conn->prepareStatement(("DELETE FROM " + global_table_name + " WHERE id=?").c_str());
+		ps->setString(1, id);
+		ps->executeQuery();
+	}
+	catch (const odbc::Exception& e)
+	{
+		std::cerr << e.what() << std::endl;
+	}
+}
+
+void DbTable::onclick(const nana::arg_click& a_cl)
+{
+	if (std::size(this->table.selected()))
+	{
+		nana::listbox::item_proxy item = this->table.at(this->table.selected()[0]);
+		auto delete_handler = [&item, this](const nana::menu::item_proxy&) { delete_by_id(dbconn, item.text(0)); update_table();  };
+
+		nana::menu m;
+		m.append("Delete", delete_handler);
+
+		m.popup_await(*this, a_cl.mouse_args->pos.x, a_cl.mouse_args->pos.y);
 	}
 }

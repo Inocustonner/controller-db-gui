@@ -46,7 +46,7 @@ public:
 		page_counter.from((int)current_page);
 
 		set_events();
-
+		table.events().click([this](const nana::arg_click& arg){ this->onclick(arg); });
 		layout();
 	}
 
@@ -87,6 +87,8 @@ public:
 	void set_events();
 	void layout();
 	void update_table();
+private:
+	void onclick(const nana::arg_click& a_cl);
 
 public:
 	MyWidgets::Listbox table;

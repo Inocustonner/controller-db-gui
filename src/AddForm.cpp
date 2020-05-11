@@ -5,6 +5,18 @@
 
 #include <iostream>
 
+#include <Windows.h>
+
+static std::string to_utf8(const std::wstring str)
+{
+	char buffer[1024] = {};
+	WideCharToMultiByte(CP_UTF8, 0, str.c_str(), std::size(str),
+		reinterpret_cast<char*>(buffer),
+		std::size(buffer), NULL, NULL);
+	return buffer;
+}
+
+
 static void update_db(DbTable& dbtable,
 					  std::vector<MyWidgets::NumTextbox>& inputs)
 {
@@ -19,22 +31,17 @@ static void update_db(DbTable& dbtable,
 	query_str = query_str + ")" + " VALUES(";
 	
 	for (auto it = std::cbegin(inputs);
-		 it != std::cend(inputs) - 1; ++it)
+		 it != std::cend(inputs); ++it)
 	{
-		DbTable::Header_Propts::Type type = dbtable.corresp_fields[std::distance(std::cbegin(inputs), it)].type;
-		if (type == DbTable::Header_Propts::Type::Numeric)
-			query_str += it->caption() + ",";
-		else if (type == DbTable::Header_Propts::Type::Text)
-			query_str += '\'' + it->caption() + '\'' + ",";
+		DbTable::Header_Propts propts = dbtable.corresp_fields[std::distance(std::cbegin(inputs), it)];
+		if (propts.type == DbTable::Header_Propts::Type::Numeric)
+			query_str += it->caption() + ',';
+		else if (propts.type == DbTable::Header_Propts::Type::Text)
+			query_str += '\'' + to_utf8(nana::to_wstring(it->caption())) + '\'' + ',';
 	}
 
-	DbTable::Header_Propts::Type type = dbtable.corresp_fields.crbegin()->type;
-	if (type == DbTable::Header_Propts::Type::Numeric)
-		query_str += std::crbegin(inputs)->caption() + ") " ON_EXCEPTION(id);
-	else if (type == DbTable::Header_Propts::Type::Text)
-		query_str += '\'' + std::crbegin(inputs)->caption() + '\'' + ") " ON_EXCEPTION(id);
-
-	//query_str += (std::crbegin(inputs))->caption() + ") " ON_EXCEPTION(id);
+	query_str.pop_back();		// remove redoudant comma
+	query_str = query_str + ") " + ON_EXCEPTION(id);
 
 	for (auto it = std::cbegin(dbtable.corresp_fields);
 		 it != std::cend(dbtable.corresp_fields); ++it)
